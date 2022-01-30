@@ -2,9 +2,6 @@
 
 #include <Siv3D.hpp>
 
-// http://marupeke296.com/COL_2D_No8_QuadTree.html
-// https://qiita.com/Yujiro-Ito/items/1078db2d78f92898b813
-
 namespace s3d
 {
 	/**
@@ -27,10 +24,10 @@ namespace s3d
 		size_t lowestLayer;
 
 		/// 管理する領域
-		Rect region;
+		Rect gamearea;
 
 		[[nodiscard]] constexpr QuadTreeConfig(size_t _layers, const Rect& _region = Scene::Rect())
-			: region(_region), lowestLayer(_layers - 1)
+			: gamearea(_region), lowestLayer(_layers - 1)
 		{
 		}
 	};

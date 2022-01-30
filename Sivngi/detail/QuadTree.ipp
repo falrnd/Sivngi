@@ -19,11 +19,11 @@
 			return (n | (n << 1)) & 0x55555555;
 		}
 
-		[[nodiscard]] constexpr I32 MortonNumber(const Rect& region, const Point& sectionSize, const Point& p)
+		[[nodiscard]] constexpr I32 MortonNumber(const Rect& gamearea, const Point& sectionSize, const Point& p)
 		{
-			const I16 x = static_cast<I16>(Clamp(p.x, 0, region.w - 1) / sectionSize.x);
-			const I16 y = static_cast<I16>(Clamp(p.y, 0, region.h - 1) / sectionSize.y);
-			Math::Map(p.x, region.pos.x, region.tr().x, 0, sectionSize.x);
+			const I16 x = static_cast<I16>(Clamp(p.x, 0, gamearea.w - 1) / sectionSize.x);
+			const I16 y = static_cast<I16>(Clamp(p.y, 0, gamearea.h - 1) / sectionSize.y);
+			Math::Map(p.x, gamearea.pos.x, gamearea.tr().x, 0, sectionSize.x);
 
 			return BitSeparate32(x) | (BitSeparate32(y) << 1);
 		}
@@ -48,10 +48,10 @@
 	{
 		const auto sectionsInRow = 1 << config.lowestLayer;
 		// 切り上げ
-		const Point sectionSize = config.region.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
+		const Point sectionSize = config.gamearea.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
 
-		const detail::I32 mortontl = detail::MortonNumber(config.region, sectionSize, r.tl().asPoint() - config.region.pos);
-		const detail::I32 mortonbr = detail::MortonNumber(config.region, sectionSize, r.br().asPoint() - config.region.pos);
+		const detail::I32 mortontl = detail::MortonNumber(config.gamearea, sectionSize, r.tl().asPoint() - config.gamearea.pos);
+		const detail::I32 mortonbr = detail::MortonNumber(config.gamearea, sectionSize, r.br().asPoint() - config.gamearea.pos);
 		const size_t layer = detail::GetLayer(config.lowestLayer, mortontl ^ mortonbr);
 		return detail::BeginLinertree(layer) + (static_cast<size_t>(mortonbr) >> ((config.lowestLayer - layer) * 2));
 	}

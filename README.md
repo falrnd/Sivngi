@@ -12,9 +12,9 @@ https://qiita.com/Yujiro-Ito/items/1078db2d78f92898b813
 <td align="center"><img alt="sample" src="https://user-images.githubusercontent.com/28914324/151689363-85a67bb9-df49-4469-bde3-469b2b4c1582.png" ></td>  
 
 ```cpp
-#include <Siv3D.hpp> // OpenSiv3D v0.6.3
+# include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
-#include "QuadTree.hpp"
+# include "QuadTree.hpp"
 
 constexpr Rect gamearea{ 160, 160, 960, 640 };
 
@@ -38,27 +38,14 @@ namespace user {
 		{
 			collision = false;
 
-			if (not KeySpace.pressed()) // not paused
-				if (not gamearea.intersects(moveBy(speed))) // out of gamearea
-					setCenter(RandomVec2(gamearea)); // reset pos
+			if (not gamearea.intersects(moveBy(speed))) // out of gamearea
+				setCenter(RandomVec2(gamearea)); // reset pos
 		}
 	};
 }
 
 namespace sample {
-	struct Profiler
-	{
-		static constexpr int loglen = 60;
-		Array<double> exectimelog = Array<double>(loglen, 0.0);
-
-		double UpdateAveExecTime(Stopwatch stopwatch)
-		{
-			exectimelog[Scene::FrameCount() % loglen] = stopwatch.msF();
-			return exectimelog.sumF() / loglen;
-		}
-	};
-
-	Rect drawDebugGrid(const QuadTreeConfig& qtc, const ColorF& color = Palette::White)
+	Rect drawQuadTreeGrid(const QuadTreeConfig& qtc, const ColorF& color = Palette::White)
 	{
 		const auto sec = 1 << qtc.lowestLayer;
 		const auto sectionSize = qtc.gamearea.size.movedBy(sec - 1, sec - 1) / sec;
@@ -84,76 +71,77 @@ void Main()
 	//objects
 	Array<user::Object> objects(512);
 
-	//負荷表示用
-	sample::Profiler profiler{};
+	int intersectCheckCount = 0;
+	int prevClock = 0;
+	bool isNaive = true;
 
 	while (System::Update())
 	{
 		ClearPrint();
 		Print << U"N: Naiveな処理(QuadTreeを使わない)\nL: 衝突判定したobject組を表示\nSpace: objectの動きを止める";
 
-		//update objects
-		objects.each([](auto& e) { e.Update(); });
+		if (not KeySpace.pressed()) // not paused
+		{
+			//update objects
+			objects.each([](auto& e) { e.Update(); });
 
-		int intersectCheckCount = 0;
-		const auto whenIntersects = [&, vis = KeyL.pressed()](user::Object& a, user::Object& b) {
-			// for sample
-			if (vis)
-				Line(a.center, b.center).draw(AlphaF(0.2));
-			++intersectCheckCount;
-
-			// 衝突判定を使うようななんかの処理(適当)
-			// ユーザーが実際に書く部分
-			if (a.intersects(b))
+			intersectCheckCount = 0;
+			const auto whenIntersects = [&, vis = KeyL.pressed()](user::Object& a, user::Object& b)
 			{
-				a.collision = b.collision = true;
+				// for sample
+				if (vis)
+					Line(a.center, b.center).draw(AlphaF(0.2));
+				++intersectCheckCount;
+
+				// 衝突判定を使うようななんかの処理(適当)
+				// ユーザーが実際に書く部分
+				if (a.intersects(b))
+					a.collision = b.collision = true;
+			};
+
+			MicrosecClock clock{}; //処理時間計測 ----------------
+
+			if (isNaive = KeyN.pressed())
+			{
+				// naive
+				for (size_t i = 0, e = objects.size(); i < e; ++i)
+					for (size_t k = i + 1; k < e; ++k)
+						whenIntersects(objects[i], objects[k]);
 			}
-		};
+			else
+			{
+				quadtree(objects)(whenIntersects);
+			}
 
-		Stopwatch stopwatch{ StartImmediately::Yes }; //処理時間計測 --------------------------
+			prevClock = clock.us(); //---------------- 処理時間計測
 
-		if (KeyN.pressed())
-		{
-			Print << U"Naiveな処理";
-			// naive
-			for (size_t i = 0, e = objects.size(); i < e; ++i)
-				for (size_t k = i + 1; k < e; ++k)
-					whenIntersects(objects[i], objects[k]);
-		}
-		else
-		{
-			Print << U"QuadTreeで処理";
-			quadtree(objects)(whenIntersects);
 		}
 
-		stopwatch.pause(); //----------------------------------------------------- 処理時間計測 
-
+		Print << (isNaive ? U"Naiveな処理" : U"QuadTreeで処理");
+		Print << prevClock << U"us";
 
 		//Draw
 		{
-			using namespace sample;
-
 			//log
 			const auto n = objects.size();
 			Print << U"n={}\tcombi(nC2)={}\tchecked:{}"_fmt(n, n * (n - 1) / 2, intersectCheckCount);
-			Print << profiler.UpdateAveExecTime(stopwatch) << U"ms";
 
 			//objects
 			for (const auto& e : objects)
 				e.draw(e.collision ? Palette::Red : Palette::Lightgreen);
 
 			//QuadTree Grid
-			drawDebugGrid(quadtree.currentConfig(), AlphaF(0.3));
+			sample::drawQuadTreeGrid(quadtree.currentConfig(), AlphaF(0.3));
 		}
 	}
 }
 ```
 
-# サンプル(速度計測抜き)
+# サンプル(短め)
 ```cpp
-#include <Siv3D.hpp> // OpenSiv3D v0.6.3
+# include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
-#include "QuadTree.hpp"
+# include "QuadTree.hpp"
 
 constexpr Rect gamearea{ 160, 160, 960, 640 };
 
@@ -177,9 +165,8 @@ namespace user {
 		{
 			collision = false;
 
-			if (not KeySpace.pressed()) // not paused
-				if (not gamearea.intersects(moveBy(speed))) // out of gamearea
-					setCenter(RandomVec2(gamearea)); // reset pos
+			if (not gamearea.intersects(moveBy(speed))) // out of gamearea
+				setCenter(RandomVec2(gamearea)); // reset pos
 		}
 	};
 }
@@ -193,31 +180,35 @@ void Main()
 	//objects
 	Array<user::Object> objects(512);
 
+	int intersectCheckCount = 0;
+	int prevClock = 0;
+
 	while (System::Update())
 	{
 		ClearPrint();
 		Print << U"L: 衝突判定したobject組を表示\nSpace: objectの動きを止める";
 
-		//update objects
-		objects.each([](auto& e) { e.Update(); });
+		if (not KeySpace.pressed()) // not paused
+		{
+			//update objects
+			objects.each([](auto& e) { e.Update(); });
 
-		int intersectCheckCount = 0;
-		const auto whenIntersects = [&, vis = KeyL.pressed()](user::Object& a, user::Object& b) {
-			// for sample
-			if (vis)
-				Line(a.center, b.center).draw(AlphaF(0.2));
-			++intersectCheckCount;
-
-			// 衝突判定を使うようななんかの処理(適当)
-			// ユーザーが実際に書く部分
-			if (a.intersects(b))
+			intersectCheckCount = 0;
+			const auto whenIntersects = [&, vis = KeyL.pressed()](user::Object& a, user::Object& b)
 			{
-				a.collision = b.collision = true;
-			}
-		};
+				// for sample
+				if (vis)
+					Line(a.center, b.center).draw(AlphaF(0.2));
+				++intersectCheckCount;
 
-		quadtree(objects)(whenIntersects);
+				// 衝突判定を使うようななんかの処理(適当)
+				// ユーザーが実際に書く部分
+				if (a.intersects(b))
+					a.collision = b.collision = true;
+			};
 
+			quadtree(objects)(whenIntersects);
+		}
 
 		//Draw
 		{
