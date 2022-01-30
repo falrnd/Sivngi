@@ -28,10 +28,6 @@
 			return BitSeparate32(x) | (BitSeparate32(y) << 1);
 		}
 
-		//[[nodiscard]] constexpr I32 MortonNumber(const RectF& region, const Vec2& sectionSize, const Point& p)
-		//{
-		//}
-
 		[[nodiscard]] constexpr size_t GetLayer(size_t lowestLayer, I32 mortonxor)
 		{
 			const auto y = mortonxor & 0xaaaaaaaa;
