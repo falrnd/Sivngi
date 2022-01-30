@@ -7,6 +7,38 @@
 http://marupeke296.com/COL_2D_No8_QuadTree.html  
 https://qiita.com/Yujiro-Ito/items/1078db2d78f92898b813  
 
+# Done
+* オブジェクトの登録(**現状Circleしか対応してない(サンプルに合わせて)**)
+* 四分木を走査し衝突可能性のあるオブジェクト組を列挙
+  * `quadtree(object)(衝突しそうな組を受け取る関数オブジェクト)`
+
+# ToDo(というかやりたい)
+* Circle以外の型のObjectへの対応
+  * boundingRectをどうもらうか(Supplierを貰う or ユーザーに関数を作ってもらうか)
+
+* オブジェクトの四分木への登録
+  * 今の実装 : 四分木の内部コンテナを毎回clearして全オブジェクト登録しなおす
+  * 参考サイトの主張 : 移動した結果登録空間が変化したオブジェクトのみを移動(コンテナがlistなのでO(1))
+  　*　四分木に更新をリクエストする方法関数が必要
+
+* 四分木を走査し衝突可能性のあるオブジェクト組を列挙
+  * イテレータで渡したい Pair<Obj,Obj>みたいな
+    * 3,4重ループの状態を保持するの面倒(良い書き方はあるのか？)
+    * coroutineの出番?
+  * 異なる型を格納した2つのQuadTree間で衝突判定
+  * 管理領域を持つ2つのQuadTree間で衝突判定
+
+* コメント&ドキュメントの整備
+
+## 議論の対象
+* "四分木を走査し衝突可能性のあるオブジェクト組を列挙"について
+  * 今の実装 : for(全ノード) for(そのノードの親)
+  * 参考サイトの実装 : スタック使ってDFS
+    * ↑だと子空間が空のとき枝刈りできるみたいなことを言ってるが本当か？(自分はわかってない)  
+      オブジェクト登録を$O(深さ)$にしていいならわかるが
+* コンテナ
+  * 今は全部Arrayにしてるがstd::listとどちらが速いか
+  * あるいはstd::deque
 
 # サンプル([Main.cpp](https://github.com/falrnd/Sivngi/blob/master/Sivngi/Main.cpp))
 <td align="center"><img alt="sample" src="https://user-images.githubusercontent.com/28914324/151689363-85a67bb9-df49-4469-bde3-469b2b4c1582.png" ></td>  
