@@ -79,10 +79,6 @@
 		return { *this };
 	}
 
-	namespace detail {
-
-	}
-
 	template<class Element>
 	void QuadTree<Element>::Accessor::operator()(const QuadTree<Element>::Accessor::Pred& f) const
 	{
