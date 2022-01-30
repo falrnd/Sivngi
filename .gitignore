@@ -426,3 +426,5 @@ gmon.out
 **/App
 Sivngi.sln
 */Sivngi.*
+**.editorconfig
+**stdafx**

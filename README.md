@@ -8,7 +8,7 @@ http://marupeke296.com/COL_2D_No8_QuadTree.html
 https://qiita.com/Yujiro-Ito/items/1078db2d78f92898b813  
 
 
-# サンプル(Main.cpp)
+# サンプル([Main.cpp](https://github.com/falrnd/Sivngi/blob/master/Sivngi/Main.cpp))
 <td align="center"><img alt="sample" src="https://user-images.githubusercontent.com/28914324/151689363-85a67bb9-df49-4469-bde3-469b2b4c1582.png" ></td>  
 
 ```cpp
