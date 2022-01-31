@@ -65,9 +65,11 @@ void Main()
 
 	while (System::Update())
 	{
-		if (animation)
 		{
-			objects.each([](auto& e) { e.update(); });
+			if (animation)
+			{
+				objects.each([](auto& e) { e.update(); });
+			}
 
 			checkCount = 0;
 
@@ -138,6 +140,11 @@ void Main()
 			SimpleGUI::CheckBox(useQuadTree, U"QuadTree", Vec2{ 500, 20 });
 			SimpleGUI::CheckBox(showCombination, U"Show Combinations", Vec2{ 660, 20 });
 			SimpleGUI::CheckBox(animation, U"Animation", Vec2{ 920, 20 });
+
+			if (SimpleGUI::Button(U"/2", Vec2{ 1090, 20 }, unspecified, objects.size() > 1))
+				objects.resize(objects.size() / 2);
+			if (SimpleGUI::Button(U"*2", Vec2{ 1160, 20 }))
+				objects.resize(objects.size() * 2);
 		}
 	}
 }

@@ -43,218 +43,156 @@ https://qiita.com/Yujiro-Ito/items/1078db2d78f92898b813
       オブジェクト登録を`O(深さ)`にしていいならわかるが
 
 # サンプル([Main.cpp](https://github.com/falrnd/Sivngi/blob/master/Sivngi/Main.cpp))
-<td align="center"><img alt="sample" src="https://user-images.githubusercontent.com/28914324/151689363-85a67bb9-df49-4469-bde3-469b2b4c1582.png" ></td>  
+<td align="center"><img alt="sample" src="https://user-images.githubusercontent.com/28914324/151736904-2e2d9bf9-3f39-49a3-bcc0-512ec7da7e08.png" ></td>  
 
 ```cpp
 # include <Siv3D.hpp> // OpenSiv3D v0.6.3
 
 # include "QuadTree.hpp"
 
-constexpr Rect gamearea{ 160, 160, 960, 640 };
+constexpr Rect GameArea{ 160, 160, 960, 640 };
 
-namespace user {
-	using ObjectShape = Circle;
+using ObjectShape = Circle;
 
-	//衝突判定する物体
-	struct Object : public ObjectShape
+// 衝突判定する物体
+struct MyObject : public ObjectShape
+{
+	Vec2 speed = RandomVec2();
+
+	// 何かに衝突したか ( update() でリセット)
+	bool collision = false;
+
+	MyObject()
+		: ObjectShape{ Arg::center = RandomVec2(GameArea), Random(5, 10) } {}
+
+	void update()
 	{
-		Vec2 speed = RandomVec2();
+		collision = false;
 
-		//何かに衝突したか(Updateでリセット)
-		bool collision = false;
-
-		[[nodiscard]] Object()
-			: ObjectShape(Arg::center = RandomVec2(gamearea), Random(5, 10))
+		if (not GameArea.intersects(moveBy(speed))) // out of gamearea
 		{
+			setCenter(RandomVec2(GameArea)); // reset pos
 		}
-
-		void Update()
-		{
-			collision = false;
-
-			if (not gamearea.intersects(moveBy(speed))) // out of gamearea
-				setCenter(RandomVec2(gamearea)); // reset pos
-		}
-	};
-}
-
-namespace sample {
-	Rect drawQuadTreeGrid(const QuadTreeConfig& qtc, const ColorF& color = Palette::White)
-	{
-		const auto sec = 1 << qtc.lowestLayer;
-		const auto sectionSize = qtc.gamearea.size.movedBy(sec - 1, sec - 1) / sec;
-
-		auto [w, h] = sectionSize * sec;
-
-		for (int i = 1; i < sec; ++i)
-		{
-			auto [x, y] = sectionSize * i;
-			Line(x + 0.5, 1, x + 0.5, h - 1).movedBy(qtc.gamearea.pos).draw(1.0, color);
-			Line(1, y + 0.5, w - 1, y + 0.5).movedBy(qtc.gamearea.pos).draw(1.0, color);
-		}
-		return qtc.gamearea.drawFrame(1.0, 0.0, color);
 	}
+};
+
+// グリッドの描画
+Rect DrawQuadTreeGrid(const QuadTreeConfig& qtc, const ColorF& color = Palette::White)
+{
+	const int32 sec = (1 << qtc.lowestLayer);
+	const Size sectionSize = (qtc.gamearea.size.movedBy(sec - 1, sec - 1) / sec);
+	const auto [w, h] = (sectionSize * sec);
+
+	for (int32 i = 1; i < sec; ++i)
+	{
+		auto [x, y] = sectionSize * i;
+		Line{ x + 0.5, 1, x + 0.5, h - 1 }.movedBy(qtc.gamearea.pos).draw(1.0, color);
+		Line{ 1, y + 0.5, w - 1, y + 0.5 }.movedBy(qtc.gamearea.pos).draw(1.0, color);
+	}
+
+	return qtc.gamearea.drawFrame(1.0, 0.0, color);
 }
 
 void Main()
 {
 	Window::Resize(1280, 960);
 
-	//四分木
-	auto quadtree = QuadTree<user::Object>{ QuadTreeConfig(6, gamearea) };
-	//objects
-	Array<user::Object> objects(512);
+	// 四分木
+	QuadTree<MyObject> quadtree{ QuadTreeConfig{ 6, GameArea } };
 
-	int intersectCheckCount = 0;
-	int prevClock = 0;
-	bool isNaive = true;
+	// 衝突判定する物体
+	constexpr int32 N = 512;
+	Array<MyObject> objects(N);
 
-	while (System::Update())
-	{
-		ClearPrint();
-		Print << U"N: Naiveな処理(QuadTreeを使わない)\nL: 衝突判定したobject組を表示\nSpace: objectの動きを止める";
-
-		if (not KeySpace.pressed()) // not paused
-		{
-			//update objects
-			objects.each([](auto& e) { e.Update(); });
-
-			intersectCheckCount = 0;
-			const auto whenIntersects = [&, vis = KeyL.pressed()](user::Object& a, user::Object& b)
-			{
-				// for sample
-				if (vis)
-					Line(a.center, b.center).draw(AlphaF(0.2));
-				++intersectCheckCount;
-
-				// 衝突判定を使うようななんかの処理(適当)
-				// ユーザーが実際に書く部分
-				if (a.intersects(b))
-					a.collision = b.collision = true;
-			};
-
-			MicrosecClock clock{}; //処理時間計測 ----------------
-
-			if (isNaive = KeyN.pressed())
-			{
-				// naive
-				for (size_t i = 0, e = objects.size(); i < e; ++i)
-					for (size_t k = i + 1; k < e; ++k)
-						whenIntersects(objects[i], objects[k]);
-			}
-			else
-			{
-				quadtree(objects)(whenIntersects);
-			}
-
-			prevClock = clock.us(); //---------------- 処理時間計測
-
-		}
-
-		Print << (isNaive ? U"Naiveな処理" : U"QuadTreeで処理");
-		Print << prevClock << U"us";
-
-		//Draw
-		{
-			//log
-			const auto n = objects.size();
-			Print << U"n={}\tcombi(nC2)={}\tchecked:{}"_fmt(n, n * (n - 1) / 2, intersectCheckCount);
-
-			//objects
-			for (const auto& e : objects)
-				e.draw(e.collision ? Palette::Red : Palette::Lightgreen);
-
-			//QuadTree Grid
-			sample::drawQuadTreeGrid(quadtree.currentConfig(), AlphaF(0.3));
-		}
-	}
-}
-```
-
-# サンプル(短め)
-```cpp
-# include <Siv3D.hpp> // OpenSiv3D v0.6.3
-
-# include "QuadTree.hpp"
-
-constexpr Rect gamearea{ 160, 160, 960, 640 };
-
-namespace user {
-	using ObjectShape = Circle;
-
-	//衝突判定する物体
-	struct Object : public ObjectShape
-	{
-		Vec2 speed = RandomVec2();
-
-		//何かに衝突したか(Updateでリセット)
-		bool collision = false;
-
-		[[nodiscard]] Object()
-			: ObjectShape(Arg::center = RandomVec2(gamearea), Random(5, 10))
-		{
-		}
-
-		void Update()
-		{
-			collision = false;
-
-			if (not gamearea.intersects(moveBy(speed))) // out of gamearea
-				setCenter(RandomVec2(gamearea)); // reset pos
-		}
-	};
-}
-
-void Main()
-{
-	Window::Resize(1280, 960);
-
-	//四分木
-	auto quadtree = QuadTree<user::Object>{ QuadTreeConfig(6, gamearea) };
-	//objects
-	Array<user::Object> objects(512);
-
-	int intersectCheckCount = 0;
-	int prevClock = 0;
+	// 設定・プロファイリング用の変数
+	bool useQuadTree = true;
+	bool showCombination = false;
+	bool animation = true;
+	int32 checkCount = 0;
+	Array<int64> usBuffer(30);
 
 	while (System::Update())
 	{
-		ClearPrint();
-		Print << U"L: 衝突判定したobject組を表示\nSpace: objectの動きを止める";
-
-		if (not KeySpace.pressed()) // not paused
 		{
-			//update objects
-			objects.each([](auto& e) { e.Update(); });
-
-			intersectCheckCount = 0;
-			const auto whenIntersects = [&, vis = KeyL.pressed()](user::Object& a, user::Object& b)
+			if (animation)
 			{
-				// for sample
-				if (vis)
-					Line(a.center, b.center).draw(AlphaF(0.2));
-				++intersectCheckCount;
+				objects.each([](auto& e) { e.update(); });
+			}
 
-				// 衝突判定を使うようななんかの処理(適当)
-				// ユーザーが実際に書く部分
+			checkCount = 0;
+
+			// ユーザ実装関数
+			const auto onCollisionCheck = [&checkCount, showCombination](MyObject& a, MyObject& b)
+			{
+				if (showCombination)
+				{
+					Line{ a.center, b.center }.draw(AlphaF(0.2));
+				}
+
+				++checkCount;
+
 				if (a.intersects(b))
+				{
 					a.collision = b.collision = true;
+				}
 			};
 
-			quadtree(objects)(whenIntersects);
+			{
+				MicrosecClock clock;
+
+				if (useQuadTree) // 四分木を使用
+				{
+					quadtree(objects)(onCollisionCheck);
+				}
+				else // 全探索
+				{
+					for (size_t i = 0; i < objects.size(); ++i)
+					{
+						for (size_t k = i + 1; k < objects.size(); ++k)
+						{
+							onCollisionCheck(objects[i], objects[k]);
+						}
+					}
+				}
+
+				const auto us = clock.us();
+				usBuffer.rotate(1);
+				usBuffer.back() = us;
+			}
 		}
 
-		//Draw
+		// 描画
 		{
-			//log
-			const auto n = objects.size();
-			Print << U"n={}\tcombi(nC2)={}\tchecked:{}"_fmt(n, n * (n - 1) / 2, intersectCheckCount);
+			for (const auto& object : objects)
+			{
+				object.draw(object.collision ? Palette::Red : Palette::Lightgreen);
+			}
 
-			//objects
-			for (const auto& e : objects)
-				e.draw(e.collision ? Palette::Red : Palette::Lightgreen);
+			// QuadTree Grid
+			DrawQuadTreeGrid(quadtree.currentConfig(), AlphaF(0.3));
+		}
 
-			gamearea.drawFrame(1.0, 0.0);
+		// デバッグ表示
+		{
+			const size_t n = objects.size();
+			const size_t c = (n * (n - 1) / 2);
+
+			ClearPrint();
+			Print << U"N: {}"_fmt(n);
+			Print << U"処理した組み合わせ: {} / {} ({:.1f}%)"_fmt(checkCount, c, (100.0 * checkCount / c));
+			Print << U"{:.0f} us"_fmt(Statistics::Mean(usBuffer.begin(), usBuffer.end()));
+		}
+
+		// 設定
+		{
+			SimpleGUI::CheckBox(useQuadTree, U"QuadTree", Vec2{ 500, 20 });
+			SimpleGUI::CheckBox(showCombination, U"Show Combinations", Vec2{ 660, 20 });
+			SimpleGUI::CheckBox(animation, U"Animation", Vec2{ 920, 20 });
+
+			if (SimpleGUI::Button(U"/2", Vec2{ 1090, 20 }, unspecified, objects.size() > 1))
+				objects.resize(objects.size() / 2);
+			if (SimpleGUI::Button(U"*2", Vec2{ 1160, 20 }))
+				objects.resize(objects.size() * 2);
 		}
 	}
 }
