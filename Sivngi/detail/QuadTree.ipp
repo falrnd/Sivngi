@@ -23,7 +23,11 @@
 		{
 			const I16 x = static_cast<I16>(Clamp(p.x, 0, gamearea.w - 1) / sectionSize.x);
 			const I16 y = static_cast<I16>(Clamp(p.y, 0, gamearea.h - 1) / sectionSize.y);
-			Math::Map(p.x, gamearea.pos.x, gamearea.tr().x, 0, sectionSize.x);
+
+			// for double
+			// この後整数にキャストしたいがMapって半開区間でも大丈夫なのか?
+			// auto nx = Math::Map(p.x, gamearea.tl().x, gamearea.br().x, 0, sectionSize.x);
+			// auto ny = Math::Map(p.y, gamearea.tl().y, gamearea.br().y, 0, sectionSize.y);
 
 			return BitSeparate32(x) | (BitSeparate32(y) << 1);
 		}
