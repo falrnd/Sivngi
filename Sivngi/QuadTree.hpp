@@ -20,7 +20,8 @@ namespace s3d
 		/// 管理する領域
 		Rect gamearea;
 
-		[[nodiscard]] constexpr QuadTreeConfig(size_t _layers, const Rect& _region = Scene::Rect())
+		SIV3D_NODISCARD_CXX20
+		constexpr QuadTreeConfig(size_t _layers, const Rect& _region = Scene::Rect())
 			: gamearea(_region), lowestLayer(_layers - 1)
 		{
 		}
@@ -38,6 +39,7 @@ namespace s3d
 		using Node = Array<std::reference_wrapper<Element>>;
 		Array<Node> linertree;
 
+		[[nodiscard]]
 		size_t get(const RectF&) const;
 
 		/// todo
@@ -48,6 +50,7 @@ namespace s3d
 			const QuadTree& qt;
 
 		public:
+			SIV3D_NODISCARD_CXX20
 			Accessor(const QuadTree& qt) : qt(qt) {}
 
 			using Pred = std::function<void(Element&, Element&)>;
@@ -57,11 +60,14 @@ namespace s3d
 		};
 
 	public:
-		[[nodiscard]] QuadTree(const QuadTreeConfig& config);
+		SIV3D_NODISCARD_CXX20
+		QuadTree(const QuadTreeConfig& config);
 
+		[[nodiscard]]
 		const auto& currentConfig() const { return config; }
 
 		//構築
+		[[nodiscard]]
 		Accessor operator()(Array<Element>&);
 	};
 
