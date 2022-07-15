@@ -9,12 +9,6 @@ namespace s3d
 	* section: 四分木のあるlayerでの分割された1区画
 	**/
 
-	namespace detail
-	{
-		using I16 = s3d::uint32;//s3d::uint16;
-		using I32 = s3d::uint32;
-	}
-
 	// todo
 	// * sectionが十分に大きくない場合とかのためにdouble版も作りたい
 	// * でも全部doubleにすると速度落ちそう

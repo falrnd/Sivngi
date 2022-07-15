@@ -1,9 +1,6 @@
 ﻿namespace s3d {
 	namespace detail
 	{
-		using I16 = s3d::uint32;//s3d::uint16;
-		using I32 = s3d::uint32;
-
 		// (4^L - 1) / (4 - 1)
 		// (2^(L*2) - 1) / 3
 		[[nodiscard]] constexpr size_t BeginLinertree(size_t layer)
@@ -11,7 +8,7 @@
 			return ((1ull << (layer * 2)) - 1) / 3;
 		}
 
-		[[nodiscard]] constexpr I32 BitSeparate32(I16 n)
+		[[nodiscard]] constexpr s3d::uint32 BitSeparate32(s3d::uint16 n)
 		{
 			n = (n | (n << 8)) & 0x00ff00ff;
 			n = (n | (n << 4)) & 0x0f0f0f0f;
@@ -19,10 +16,10 @@
 			return (n | (n << 1)) & 0x55555555;
 		}
 
-		[[nodiscard]] constexpr I32 MortonNumber(const Rect& gamearea, const Point& sectionSize, const Point& p)
+		[[nodiscard]] constexpr s3d::uint32 MortonNumber(const Rect& gamearea, const Point& sectionSize, const Point& p)
 		{
-			const I16 x = static_cast<I16>(Clamp(p.x, 0, gamearea.w - 1) / sectionSize.x);
-			const I16 y = static_cast<I16>(Clamp(p.y, 0, gamearea.h - 1) / sectionSize.y);
+			const auto x = static_cast<s3d::uint16>(Clamp(p.x, 0, gamearea.w - 1) / sectionSize.x);
+			const auto y = static_cast<s3d::uint16>(Clamp(p.y, 0, gamearea.h - 1) / sectionSize.y);
 
 			// for double
 			// この後整数にキャストしたいがMapって半開区間でも大丈夫なのか?
@@ -32,7 +29,7 @@
 			return BitSeparate32(x) | (BitSeparate32(y) << 1);
 		}
 
-		[[nodiscard]] constexpr size_t GetLayer(size_t lowestLayer, I32 mortonxor)
+		[[nodiscard]] constexpr size_t GetLayer(size_t lowestLayer, s3d::uint32 mortonxor)
 		{
 			const auto y = mortonxor & 0xaaaaaaaa;
 			const auto x = mortonxor & 0x55555555;
@@ -50,8 +47,8 @@
 		// 切り上げ
 		const Point sectionSize = config.gamearea.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
 
-		const detail::I32 mortontl = detail::MortonNumber(config.gamearea, sectionSize, r.tl().asPoint() - config.gamearea.pos);
-		const detail::I32 mortonbr = detail::MortonNumber(config.gamearea, sectionSize, r.br().asPoint() - config.gamearea.pos);
+		const s3d::uint32 mortontl = detail::MortonNumber(config.gamearea, sectionSize, r.tl().asPoint() - config.gamearea.pos);
+		const s3d::uint32 mortonbr = detail::MortonNumber(config.gamearea, sectionSize, r.br().asPoint() - config.gamearea.pos);
 		const size_t layer = detail::GetLayer(config.lowestLayer, mortontl ^ mortonbr);
 		return detail::BeginLinertree(layer) + (static_cast<size_t>(mortonbr) >> ((config.lowestLayer - layer) * 2));
 	}
