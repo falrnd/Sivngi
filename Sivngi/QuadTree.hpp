@@ -69,6 +69,8 @@ namespace s3d
 		//構築
 		[[nodiscard]]
 		Accessor operator()(Array<Element>&);
+
+		size_t getMemsizeRough() const;
 	};
 
 }

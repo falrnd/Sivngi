@@ -133,6 +133,7 @@ void Main()
 			Print << U"N: {}"_fmt(n);
 			Print << U"処理した組み合わせ: {} / {} ({:.1f}%)"_fmt(checkCount, c, (100.0 * checkCount / c));
 			Print << U"{:.0f} us"_fmt(Statistics::Mean(usBuffer.begin(), usBuffer.end()));
+			Print << U"using {} bytes"_fmt(quadtree.getMemsizeRough());
 		}
 
 		// 設定

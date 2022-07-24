@@ -109,4 +109,10 @@
 			}
 		}
 	}
+
+	template<class Element>
+	size_t QuadTree<Element>::getMemsizeRough() const
+	{
+		return sizeof(QuadTree<Element>) + linertree.map([](const Node& node) {return node.capacity() * sizeof(Node::value_type); }).sum();
+	}
 }
