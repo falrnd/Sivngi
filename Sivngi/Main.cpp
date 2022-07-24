@@ -31,18 +31,18 @@ struct MyObject : public ObjectShape
 // グリッドの描画
 Rect DrawQuadTreeGrid(const QuadTreeConfig& qtc, const ColorF& color = Palette::White)
 {
-	const int32 sec = (1 << qtc.lowestLayer);
-	const Size sectionSize = (qtc.gamearea.size.movedBy(sec - 1, sec - 1) / sec);
+	const int32 sec = (1 << qtc.lowestLevel);
+	const Size sectionSize = (qtc.region.size.movedBy(sec - 1, sec - 1) / sec);
 	const auto [w, h] = (sectionSize * sec);
 
 	for (int32 i = 1; i < sec; ++i)
 	{
 		auto [x, y] = sectionSize * i;
-		Line{ x + 0.5, 1, x + 0.5, h - 1 }.movedBy(qtc.gamearea.pos).draw(1.0, color);
-		Line{ 1, y + 0.5, w - 1, y + 0.5 }.movedBy(qtc.gamearea.pos).draw(1.0, color);
+		Line{ x + 0.5, 1, x + 0.5, h - 1 }.movedBy(qtc.region.pos).draw(1.0, color);
+		Line{ 1, y + 0.5, w - 1, y + 0.5 }.movedBy(qtc.region.pos).draw(1.0, color);
 	}
 
-	return qtc.gamearea.drawFrame(1.0, 0.0, color);
+	return qtc.region.drawFrame(1.0, 0.0, color);
 }
 
 void Main()

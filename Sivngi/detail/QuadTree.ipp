@@ -3,9 +3,9 @@
 	{
 		// (4^L - 1) / (4 - 1)
 		// (2^(L*2) - 1) / 3
-		[[nodiscard]] constexpr size_t BeginLinertree(size_t layer)
+		[[nodiscard]] constexpr size_t BeginLinertree(size_t level)
 		{
-			return ((1ull << (layer * 2)) - 1) / 3;
+			return ((1ull << (level * 2)) - 1) / 3;
 		}
 
 		[[nodiscard]] constexpr s3d::uint32 BitSeparate32(s3d::uint16 n)
@@ -29,34 +29,34 @@
 			return BitSeparate32(x) | (BitSeparate32(y) << 1);
 		}
 
-		[[nodiscard]] constexpr size_t GetLayer(size_t lowestLayer, s3d::uint32 mortonxor)
+		[[nodiscard]] constexpr size_t GetLayer(size_t lowestLevel, s3d::uint32 mortonxor)
 		{
 			const auto y = mortonxor & 0xaaaaaaaa;
 			const auto x = mortonxor & 0x55555555;
 
 			//0b?0?0?0
 			const auto t = y | (x << 1);
-			return lowestLayer - std::bit_width(t) / 2;
+			return lowestLevel - std::bit_width(t) / 2;
 		}
 	}
 
 	template<class Element>
 	size_t QuadTree<Element>::get(const RectF& r) const
 	{
-		const auto sectionsInRow = 1 << config.lowestLayer;
+		const auto sectionsInRow = 1 << config.lowestLevel;
 		// 切り上げ
-		const Point sectionSize = config.gamearea.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
+		const Point sectionSize = config.region.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
 
-		const s3d::uint32 mortontl = detail::MortonNumber(config.gamearea, sectionSize, r.tl().asPoint() - config.gamearea.pos);
-		const s3d::uint32 mortonbr = detail::MortonNumber(config.gamearea, sectionSize, r.br().asPoint() - config.gamearea.pos);
-		const size_t layer = detail::GetLayer(config.lowestLayer, mortontl ^ mortonbr);
-		return detail::BeginLinertree(layer) + (static_cast<size_t>(mortonbr) >> ((config.lowestLayer - layer) * 2));
+		const s3d::uint32 mortontl = detail::MortonNumber(config.region, sectionSize, r.tl().asPoint() - config.region.pos);
+		const s3d::uint32 mortonbr = detail::MortonNumber(config.region, sectionSize, r.br().asPoint() - config.region.pos);
+		const size_t layer = detail::GetLayer(config.lowestLevel, mortontl ^ mortonbr);
+		return detail::BeginLinertree(layer) + (static_cast<size_t>(mortonbr) >> ((config.lowestLevel - layer) * 2));
 	}
 
 	template<class Element>
 	QuadTree<Element>::QuadTree(const QuadTreeConfig& config)
 		: config(config)
-		, linertree(detail::BeginLinertree(config.lowestLayer + 1))
+		, linertree(detail::BeginLinertree(config.lowestLevel + 1))
 	{
 	}
 
@@ -80,11 +80,11 @@
 	void QuadTree<Element>::Accessor::operator()(const QuadTree<Element>::Accessor::Pred& f) const
 	{
 		//layerをなめる
-		for (int layer1 = 0; layer1 <= qt.config.lowestLayer; ++layer1)
+		for (int level1 = 0; level1 <= qt.config.lowestLevel; ++level1)
 		{
-			const size_t beginLt1 = detail::BeginLinertree(layer1);
+			const size_t beginLt1 = detail::BeginLinertree(level1);
 			//layer内のsectionをなめる
-			for (size_t morton = 0, sectionsInLayer = 1ull << (layer1 * 2); morton < sectionsInLayer; ++morton)
+			for (size_t morton = 0, sectionsInLayer = 1ull << (level1 * 2); morton < sectionsInLayer; ++morton)
 			{
 				auto&& node = qt.linertree[beginLt1 + morton];
 				if (!node)
@@ -96,9 +96,9 @@
 
 				size_t morton2 = morton >> 2;
 				//sectionの親空間をなめる
-				for (int layer2 = layer1 - 1; layer2 >= 0; --layer2, morton2 >>= 2)
+				for (int level2 = level1 - 1; level2 >= 0; --level2, morton2 >>= 2)
 				{
-					auto&& node2 = qt.linertree[detail::BeginLinertree(layer2) + morton2];
+					auto&& node2 = qt.linertree[detail::BeginLinertree(level2) + morton2];
 					if (!node2)
 						continue;
 

@@ -5,7 +5,7 @@
 namespace s3d
 {
 	/**
-	* layer: 四分木のn番目の層(0-indexed)
+	* level: 四分木のn番目の層(0-indexed)
 	* section: 四分木のあるlayerでの分割された1区画
 	**/
 
@@ -15,14 +15,14 @@ namespace s3d
 	struct QuadTreeConfig
 	{
 		/// 最下位空間の番号(0-indexed)
-		size_t lowestLayer;
+		size_t lowestLevel;
 
 		/// 管理する領域
-		Rect gamearea;
+		Rect region;
 
 		SIV3D_NODISCARD_CXX20
-		constexpr QuadTreeConfig(size_t _layers, const Rect& _region = Scene::Rect())
-			: gamearea(_region), lowestLayer(_layers - 1)
+		constexpr QuadTreeConfig(size_t levels, const Rect& region = Scene::Rect())
+			: region(region), lowestLevel(levels - 1)
 		{
 		}
 	};
