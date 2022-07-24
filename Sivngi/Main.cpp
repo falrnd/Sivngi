@@ -9,9 +9,9 @@ using ObjectShape = Circle;
 // 衝突判定する物体
 struct MyObject : public ObjectShape
 {
-	Vec2 speed = RandomVec2();
+	Vec2 speed = RandomVec2() * Scene::GetMaxDeltaTime();
 
-	// 何かに衝突したか ( update() でリセット)
+	// 何かに衝突したか (update() でリセット)
 	bool collision = false;
 
 	MyObject()
@@ -96,7 +96,7 @@ void Main()
 				{
 					quadtree(objects)(onCollisionCheck);
 				}
-				else // 全探索
+				else // 全探索 (比較用)
 				{
 					for (size_t i = 0; i < objects.size(); ++i)
 					{
