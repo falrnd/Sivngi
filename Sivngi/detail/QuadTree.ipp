@@ -29,7 +29,7 @@
 			return BitSeparate32(x) | (BitSeparate32(y) << 1);
 		}
 
-		[[nodiscard]] constexpr size_t GetLayer(size_t lowestLevel, s3d::uint32 mortonxor)
+		[[nodiscard]] constexpr size_t GetLevelFromMortonNumber(size_t lowestLevel, s3d::uint32 mortonxor)
 		{
 			const auto y = mortonxor & 0xaaaaaaaa;
 			const auto x = mortonxor & 0x55555555;
@@ -43,21 +43,29 @@
 	template<class Element>
 	size_t QuadTree<Element>::get(const RectF& r) const
 	{
-		const auto sectionsInRow = 1 << config.lowestLevel;
+		const auto sectionsInRow = 1 << levels;
 		// 切り上げ
-		const Point sectionSize = config.region.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
+		const Point sectionSize = region.size.movedBy(sectionsInRow - 1, sectionsInRow - 1) / sectionsInRow;
 
-		const s3d::uint32 mortontl = detail::MortonNumber(config.region, sectionSize, r.tl().asPoint() - config.region.pos);
-		const s3d::uint32 mortonbr = detail::MortonNumber(config.region, sectionSize, r.br().asPoint() - config.region.pos);
-		const size_t layer = detail::GetLayer(config.lowestLevel, mortontl ^ mortonbr);
-		return detail::BeginLinertree(layer) + (static_cast<size_t>(mortonbr) >> ((config.lowestLevel - layer) * 2));
+		const s3d::uint32 mortontl = detail::MortonNumber(region, sectionSize, r.tl().asPoint() - region.pos);
+		const s3d::uint32 mortonbr = detail::MortonNumber(region, sectionSize, r.br().asPoint() - region.pos);
+		const size_t layer = detail::GetLevelFromMortonNumber(levels, mortontl ^ mortonbr);
+		return detail::BeginLinertree(layer) + (static_cast<size_t>(mortonbr) >> ((levels - layer) * 2));
 	}
 
 	template<class Element>
-	QuadTree<Element>::QuadTree(const QuadTreeConfig& config)
-		: config(config)
-		, linertree(detail::BeginLinertree(config.lowestLevel + 1))
+	QuadTree<Element>::QuadTree(size_t levels, Rect region)
+		: levels(levels)
+		, region(region)
+		, linertree(detail::BeginLinertree(levels + 1))
 	{
+	}
+
+	template<class Element>
+	void QuadTree<Element>::setLevels(size_t levels)
+	{
+		this->levels = levels;
+		linertree.resize(detail::BeginLinertree(levels + 1));
 	}
 
 	template<class Element>
@@ -80,7 +88,7 @@
 	void QuadTree<Element>::Accessor::operator()(const QuadTree<Element>::Accessor::Pred& f) const
 	{
 		//layerをなめる
-		for (int level1 = 0; level1 <= qt.config.lowestLevel; ++level1)
+		for (int level1 = 0; level1 <= qt.levels; ++level1)
 		{
 			const size_t beginLt1 = detail::BeginLinertree(level1);
 			//layer内のsectionをなめる

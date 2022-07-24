@@ -29,20 +29,22 @@ struct MyObject : public ObjectShape
 };
 
 // グリッドの描画
-Rect DrawQuadTreeGrid(const QuadTreeConfig& qtc, const ColorF& color = Palette::White)
+template<class E>
+Rect DrawQuadTreeGrid(const QuadTree<E>& qt, const ColorF& color = Palette::White)
 {
-	const int32 sec = (1 << qtc.lowestLevel);
-	const Size sectionSize = (qtc.region.size.movedBy(sec - 1, sec - 1) / sec);
+	const int32 sec = 1 << qt.getLevels();
+	const auto& region = qt.getRegion();
+	const Size sectionSize = (region.size.movedBy(sec - 1, sec - 1) / sec);
 	const auto [w, h] = (sectionSize * sec);
 
 	for (int32 i = 1; i < sec; ++i)
 	{
 		auto [x, y] = sectionSize * i;
-		Line{ x + 0.5, 1, x + 0.5, h - 1 }.movedBy(qtc.region.pos).draw(1.0, color);
-		Line{ 1, y + 0.5, w - 1, y + 0.5 }.movedBy(qtc.region.pos).draw(1.0, color);
+		Line{ x + 0.5, 1, x + 0.5, h - 1 }.movedBy(region.pos).draw(1.0, color);
+		Line{ 1, y + 0.5, w - 1, y + 0.5 }.movedBy(region.pos).draw(1.0, color);
 	}
 
-	return qtc.region.drawFrame(1.0, 0.0, color);
+	return region.drawFrame(1.0, 0.0, color);
 }
 
 void Main()
@@ -50,7 +52,7 @@ void Main()
 	Window::Resize(1280, 960);
 
 	// 四分木
-	QuadTree<MyObject> quadtree{ QuadTreeConfig{ 6, GameArea } };
+	QuadTree<MyObject> quadtree{ 6, GameArea };
 
 	// 衝突判定する物体
 	constexpr int32 N = 512;
@@ -121,7 +123,7 @@ void Main()
 			}
 
 			// QuadTree Grid
-			DrawQuadTreeGrid(quadtree.currentConfig(), AlphaF(0.3));
+			DrawQuadTreeGrid(quadtree, AlphaF(0.3));
 		}
 
 		// デバッグ表示
