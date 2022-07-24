@@ -63,10 +63,10 @@
 	template<class Element>
 	QuadTree<Element>::Accessor QuadTree<Element>::operator()(Array<Element>& elements)
 	{
-		for (auto&& node : linertree)
+		for (Node& node : linertree)
 			node.clear();
 
-		for (auto& e : elements)
+		for (Element& e : elements)
 		{
 			//todo: boundingRectを得る関数は外部から与えるべき？
 			linertree[get(e.boundingRect())].emplace_back(e);
@@ -86,7 +86,7 @@
 			//layer内のsectionをなめる
 			for (size_t morton = 0, sectionsInLayer = 1ull << (level1 * 2); morton < sectionsInLayer; ++morton)
 			{
-				auto&& node = qt.linertree[beginLt1 + morton];
+				const Node& node = qt.linertree[beginLt1 + morton];
 				if (!node)
 					continue;
 
@@ -98,7 +98,7 @@
 				//sectionの親空間をなめる
 				for (int level2 = level1 - 1; level2 >= 0; --level2, morton2 >>= 2)
 				{
-					auto&& node2 = qt.linertree[detail::BeginLinertree(level2) + morton2];
+					const Node& node2 = qt.linertree[detail::BeginLinertree(level2) + morton2];
 					if (!node2)
 						continue;
 
